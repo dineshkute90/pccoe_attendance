@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Attendance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .present { background-color: #def7ec; border-color: #31c48d; }
+        .absent { background-color: #fde8e8; border-color: #f05252; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen pb-24">
+
+    <header class="bg-white shadow-sm sticky top-0 z-10 p-4 mb-6">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">B.Tech ENTC - Division A</h1>
+                <p class="text-sm text-gray-500">Quick Attendance Mode</p>
+            </div>
+            
+            <div class="flex gap-4 text-center text-sm font-semibold">
+                <div class="bg-gray-100 px-3 py-2 rounded">Total: <span id="total-count">0</span></div>
+                <div class="bg-green-100 text-green-800 px-3 py-2 rounded">Present: <span id="present-count">0</span></div>
+                <div class="bg-red-100 text-red-800 px-3 py-2 rounded">Absent: <span id="absent-count">0</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4">
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+            <input type="text" id="search-bar" placeholder="Search by name or Reg No..." class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex gap-2 shrink-0">
+                <button onclick="setAll(true)" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">All Present</button>
+                <button onclick="setAll(false)" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition">Clear All</button>
+            </div>
+        </div>
+
+        <div id="student-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            </div>
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <span class="text-sm text-gray-600">Review counts before submitting.</span>
+            <button onclick="submitAttendance()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 shadow transition">
+                Submit Attendance
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Sample parsed data from your uploaded file (Truncated for clean setup)
+        const students = [
+            { id: "124B1E002", name: "Nishant Prashant Ghotkar", status: true },
+            { id: "125B2E008", name: "Kaustubh Ravindra Firke", status: true }
+            // Add remaining student objects here securely
+        ];
+
+        function renderStudents(filterText = "") {
+            const listContainer = document.getElementById("student-list");
+            listContainer.innerHTML = "";
+
+            const filtered = students.filter(s => 
+                s.name.toLowerCase().includes(filterText.toLowerCase()) || 
+                s.id.includes(filterText)
+            );
+
+            filtered.forEach(student => {
+                const card = document.createElement("div");
+                card.className = `p-4 border rounded-xl flex justify-between items-center cursor-pointer transition-all ${student.status ? 'present' : 'absent'}`;
+                card.onclick = () => toggleStatus(student.id);
+
+                card.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-800">${student.name}</p>
+                        <p class="text-xs text-gray-500">${student.id}</p>
+                    </div>
+                    <div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${student.status ? 'bg-green-200 text-green-900' : 'bg-red-200 text-red-900'}">
+                            ${student.status ? 'P' : 'A'}
+                        </span>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+            updateStats();
+        }
+
+        function toggleStatus(id) {
+            const student = students.find(s => s.id === id);
+            if (student) student.status = !student.status;
+            renderStudents(document.getElementById("search-bar").value);
+        }
+
+        function setAll(status) {
+            students.forEach(s => s.status = status);
+            renderStudents(document.getElementById("search-bar").value);
+        }
+
+        function updateStats() {
+            const total = students.length;
+            const present = students.filter(s => s.status).length;
+            const absent = total - present;
+
+            document.getElementById("total-count").innerText = total;
+            document.getElementById("present-count").innerText = present;
+            document.getElementById("absent-count").innerText = absent;
+        }
+
+        function submitAttendance() {
+            const absentList = students.filter(s => !s.status).map(s => `${s.name} (${s.id})`);
+            
+            // Format data for export / copy-paste convenience
+            const logWindow = `--- ATTENDANCE REPORT ---\nTotal Present: ${students.filter(s=>s.status).length}\nTotal Absent: ${absentList.length}\n\nAbsentee List:\n${absentList.join('\n') || 'None'}`;
+            
+            alert(logWindow);
+            console.log(students); // Ready to be sent to an API/database
+        }
+
+        // Event Listeners
+        document.getElementById("search-bar").addEventListener("input", (e) => renderStudents(e.target.value));
+
+        // Initial Load
+        renderStudents();
+    </script>
+</body>
+</html>
